@@ -1,0 +1,17 @@
+\begin{lstlisting}[
+    label=code:instruments,
+    style=myScalastyle,
+    caption=Invocazione di un'azione per reperire il contenuto di un \textit{Dataset} in locale.
+]
+// Collect instruments dataframe
+val mapping = manager.getColumnMapping("stats")
+val mapper = new ObjectMapper()
+
+val instruments = manager.loadedTables("strumenti").df
+  .select(mapping:_*)
+  .collect()
+  .map(row => {
+    val instrument = mapper.readValue(row.json, classOf[ProductBO])
+    instrument.getCode -> instrument
+  }).toMap
+\end{lstlisting}

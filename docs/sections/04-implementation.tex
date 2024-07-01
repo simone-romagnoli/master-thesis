@@ -2,3 +2,251 @@
 \clearpage
 \chapter{Descrizione delle implementazioni}\label{ch:implementation}
 In questo capitolo vengono descritte e discusse le implementazioni delle componenti del sistema.
+
+\section{Manutenzione}\label{sec:mantainance}
+Come anticipato nella sezione~\ref{sec:infrastructure}, il progetto è stato mantenuto su \textit{GitHub};
+quindi, il \textit{distributed version control system} utilizzato è stato \textbf{Git}.
+Per cooperare con i colleghi e garantire allineamento sui branch di sviluppo, è stata seguita la convenzione di \textit{GitFlow} con le seguenti caratteristiche:
+\begin{itemize}
+    \item Sono stati creati i branch \textit{master} e \textit{develop}, utilizzati rispettivamente per caricare le modifiche sugli ambienti di \textit{staging} (in futuro \textit{produzione}) e \textit{sviluppo}.
+    \item Ogni sviluppatore che volesse applicare delle modifiche, deve creare un \textbf{feature branch} a partire da \textit{develop}.
+    Il nome del feature branch deve rispettare il pattern: \texttt{feature/<nome-feature>}.
+    Eventualmente, si può includere nel nome del feature branch (prima del nome della feature) anche le iniziali dello sviluppatore che se ne occupa.
+    Si elencano alcuni esempi di feature branch creati in corso di sviluppo: \texttt{feature/sr-migrations}, \texttt{feature/statistics}, \texttt{feature/openSearchWrite}.
+    \item La creazione dei feature branch avviene tramite l'utilizzo del plugin \texttt{gitflow} di \textit{Maven}.
+    \item Sono state utilizzate \textit{rebase policy} diverse per quanto riguarda l'allineamento dei feature branch con develop e di develop con master.
+    Nello specifico, per allineare i feature branch con develop è stata utilizzata una policy di \textbf{rebase}.
+    Invece, per allineare develop con master, è stata utilizzata la rebase policy di \textbf{merge}.
+\end{itemize}
+
+\section{Implementazioni}\label{sec:implementations}
+In questa sezione vengono descritte le implementazioni realizzate a progetto e a prodotto.
+In particolare, ci si concentrerà sulle porzioni di codice ritenute importanti, se non essenziali, per la comprensione dell'architettura del sistema a livello implementativo.
+Le porzioni di codice ritenute troppo verbose vengono riportate nell'appendice~\ref{ch:appendix}.
+
+\subsection{Implementazioni del progetto}\label{subsec:project-implementation}
+In questa sezione vengono riportati i punti salienti delle implementazioni di ciascun batch del progetto realizzato.
+
+\subsubsection{Data Validation}\label{subsubsec:data}
+In questa parte viene descritto il batch che costituisce il punto d'ingresso dei dati per l'intero processo di integrazione.
+Inoltre, siccome è il primo capitolo riguardante l'implememtazione delle componenti del sistema, in questa parte verranno fatte diverse descrizioni e assunzioni valide anche per tutti i seguenti batch.
+
+Il listato~\ref{code:main} mostra come sono organizzati i \textit{main} del progetto.
+Ognuno rappresenta il punto di ingresso di un batch, per cui è necessario mantenere una determinata struttura.
+Infatti, il primo comando consiste nel creare una \textbf{sessione Spark}, necessaria per poter effettuare operazioni distribuite col framework citato.
+I comandi successivi rappresentano una serie di chiamate a funzioni di libreria che permettono di caricare in memoria i flussi in base a quanto specificato dalla variabile \texttt{jsonContent}.
+Di fatto, quest'ultima carica un file in formato \textit{json} contenente i flussi da leggere in input con i percorsi indicati nel listato~\ref{code:mapping} in appendice.
+Questo genere di caricamento permette di specificare lo schema di ciascuna tabella in un formato compatto;
+nel dettaglio, per ogni tabella è necessario specificare la chiave primaria ed eventuali chiavi esterne.
+In questo modo, nelle fasi successive della validazione sarà possibile controllare se i record sono duplicati o se le chiavi esterne non sono censite.
+
+\input{code/data-validation}
+
+Infine, una volta ottenute le configurazioni del caricamento dei flussi, il compito del \texttt{Manager} è quello di caricare effettivamente i dataframe in memoria effettuando delle operazioni di trasformazione, per poi riscrivere il risultato in formato \textit{parquet}.
+Le operazioni di trasformazione vengono effettuate in diversi step, seguendo l'ordine dei controlli necessari per la validazione dei record.
+In particolare, le trasformazioni vengono definite all'interno dell'oggetto \texttt{CustomDataTransformations} che estende l'interfaccia di libreria \texttt{Transformations}.
+Di seguito, si mostra l'interfaccia \texttt{Transformations} per meglio spiegare come avviene l'integrazione dei dataframe.
+
+\clearpage
+\input{code/transformations}
+
+Come si può notare dall'interfaccia nel listato~\ref{code:transformations} l'integrazione dei dataframe presenta diversi step;
+nello specifico, ogni metodo rappresenta un punto di ingresso per delle trasformazioni dichiarate in maniera funzionale, che vengono eseguite in momenti diversi a seconda del metodo stesso.
+
+\begin{enumerate}
+    \item \texttt{beforeDataValidation} - in questo metodo vanno dichiarate tutte le trasformazioni da eseguire prima di qualsiasi step di integrazione.
+    Quando si sceglie di effettuare una trasformazione a questo livello, bisogna tener conto del fatto che mancano diverse informazioni, come il tipo di dato di ogni campo (tutti sono caricati come stringhe).
+    \item \texttt{afterDataCast} - è la fase immediatamente successiva alla trasformazione dei tipi di dato dei campi.
+    Il tipo di dato corretto viene indicato nel mapping, di cui un esempio è indicato nel listato~\ref{code:mapping} in appendice.
+    I record che presentano incoerenze con i tipi di dato del mapping vengono scartati (ad esempio, un record con un campo valorizzato con la stringa $"S\grave{\imath}"$ con tipo booleano).
+    \item \texttt{afterDuplicatesRemoval} - è la fase immediatamente successiva al controllo delle chiavi primarie.
+    Una chiave primaria duplicata significa un record duplicato.
+    Nel caso di record duplicati, entrambi i record vanno scartati, in quanto non si sa quale dei due sia quello effettivamente correlato alla chiave primaria.
+    \item \texttt{afterDiscardedRecordsReuse} - è la fase immediatamente successiva al riutilizzo di record precedentemente scartati, che sono stati poi corretti.
+    \item \texttt{afterFkConstraintsCheck} - è la fase immediatamente successiva al controllo delle chiavi esterne.
+    Nello specifico, va controllato che una chiave esterna sia censita, ovvero che esista un record nella tabella $"padre"$ che presenti dei campi valorizzati come la chiave esterna.
+    Tale procedura è necessaria in quanto successive operazioni potrebbero provocare dei fallimenti, come, ad esempio, delle operazioni di \textit{join} tra tabelle.
+    \item \texttt{afterDataValidation} - in questo metodo vanno dichiarate tutte le trasformazioni da eseguire dopo qualsiasi step di integrazione.
+    Le trasformazioni effettuate a questo livello devono tener conto che le informazioni contenute nei dataframe sono complete e che non verranno effettuati altri controlli in seguito.
+    Di conseguenza, bisogna operare con cautela per non introdurre errori.
+\end{enumerate}
+L'ultima parte del batch in questione consiste nella scrittura dei dataframe in un unico formato.
+Nello specifico, ogni flusso in output viene riscritto in formato \textit{parquet}.
+Tale scelta è dovuta a questioni di \textit{storing} e \textit{performance}.
+Infatti, i file \textit{parquet} sono binari compressi che occupano meno spazio su storage rispetto ai file di testo.
+Inoltre, i formati di dati basati su colonne permettono query più veloci rispetto ai file di testo~\cite{parquet}.
+In questo modo, i batch successivi che dipendono dalla validazione dei flussi possono accedervi in maniera efficiente da un unico punto.
+
+\subsubsection{Scrittura su Database dei Rendimenti}\label{subsubsec:postgres}
+Il batch dei rendimenti utilizza in input i flussi validati dal batch di \textit{data validation} e produce dei file \textit{parquet} con informazioni di sintesi relative ai rendimenti ottenuti dai clienti in un certo periodo di tempo.
+Quello successivo si occupa di scrivere su un database \textit{Postgres} un sottoinsieme di informazioni relative ai rendimenti calcolati.
+Inizialmente, queste due operazioni venivano effettuate in sequenza all'interno di un unico batch.
+Una volta effettuato il deploy e lanciato il job su \textit{AWS Glue} in ambiente di sviluppo, ci si è resi conto che la scrittura su database crea un collo di bottiglia rilevante dal punto di vista delle prestazioni, non risolvibile scalando orizzontalmente con il numero di nodi del job.
+Nello specifico, il tempo d'esecuzione del processo è più che raddoppiato, passando a oltre 20 minuti rispetto ai 10 precedenti.
+Di conseguenza, per permettere di eseguire test in ambiente di sviluppo sui rendimenti calcolati separatamente a quelli scritti su database, è stato deciso di separare la logica in due batch.
+
+Nella realizzazione della scrittura su database \textit{Postgres}, è stata implementata una componente utilizzabile generalmente per ottenere segreti da \textit{AWS Secrets Manager}.
+Le informazioni relative alla connessione al database non possono essere inserite nel codice sorgente per motivi di sicurezza.
+Quindi vengono mantenute all'interno di un repository di segreti di \textit{AWS Secrets Manager} assieme ad altre informazioni la cui \textit{disclosure} può essere pericolosa.
+La componente in questione permette di ottenere un qualsiasi segreto definendone la procedura di deserializzazione.
+Nel caso in esempio, il segreto è salvato in formato \textit{json}, per cui è stato deserializzato usando la libreria \textit{jackson} in una classe.
+
+Il listato~\ref{code:secrets-manager} mostra come sia stato reso possibile reperire qualsiasi tipo di segreto.
+La funzione \texttt{getSecret} è generica nel tipo di segreto che si vuole ottenere;
+questo, assieme alla procedura di deserializzazione (resa implicita), può essere definito al livello del caso d'uso.
+In questo modo, è stato possibile inserire la componente per ottenere i segreti tra i package di libreria interna di Prometeia, affinché possa essere riutilizzata.
+
+\clearpage
+\input{code/secrets-manager}
+
+Un altro aspetto importante per la scrittura dei rendimenti su database è stata l'implementazione di una query per aggiungere informazioni necessarie e rimuovere le superflue.
+In particolare, è stata effettuata una operazione di \textit{select} per ridurre il numero di campi da tenere su database e una \textit{filter} per selezionare solo i record di interesse.
+Inoltre, è stata definita una \textit{User-Defined Function} (più semplicemente \textit{udf}) che permette di applicare una funzione ai valori di una colonna.
+Quest'ultima è stata utilizzata per inizializzare un campo a seconda del valore di un altro, come mostrato nel listato~\ref{code:returns-udf}.
+
+\clearpage
+\input{code/returns-udf}
+
+\subsubsection{Statistiche}\label{subsubsec:stats}
+Il batch delle statistiche ha un output leggermente diverso dagli altri, in quanto deve serializzare delle specifiche informazioni che andranno successivamente interpretate da degli \textit{engine}.
+Queste informazioni corrispondono a delle richieste convenzionalmente chiamate \textbf{massive}, in quanto vengono invocate per ciascun record del flusso dei clienti.
+Lo scopo del batch è quindi quello di prendere in input tutte le informazioni validate in precedenza e calcolare delle specifiche \textbf{statistiche} che andranno poi opportunamente serializzate.
+
+Un aspetto differente rispetto agli altri batch è quello di avere in memoria salvati tutti gli strumenti finanziari.
+Solitamente, questi vengono consultati effettuando le opportune trasformazioni sull'apposito \textit{Dataset}, quindi semplicemente costruendo il piano logico di Spark senza mantenere alcuna informazione in memoria locale.
+In questo batch, invece, è stato necessario riutilizzare delle porzioni di codice \textit{Java} per la costruzione delle richieste.
+Queste porzioni di codice, oltre a non utilizzare la tecnologia Spark, mantengono in memoria le informazioni relative agli strumenti per diverse verifiche, all'interno di un oggetto chiamato \texttt{ProductBO}, ovvero il \textit{business object} degli strumenti.
+Per cui, è stato necessario deserializzare gli strumenti dai \textit{DataFrame} in una apposita mappa.
+Per farlo, è stata utilizzata l'\textbf{azione} \texttt{collect}:
+questa permette di eseguire il piano logico di Spark e collezionare le informazioni in locale per poterle quindi deserializzare.
+L'intera procedura è mostrata nel listato~\ref{code:instruments}.
+
+\input{code/instruments}
+
+La funzione \texttt{getColumnMapping} preleva da un file di configurazione un insieme di informazioni che permettono di rinominare le colonne di un \textit{Dataset}.
+Questo viene fatto per avere un'unica notazione in output.
+Convenzionalmente, viene utilizzato il \textit{camel case}, mentre, solitamente, i flussi ricevuti dal cliente arrivano con le colonne scritte in \textit{upper case}.
+In questo modo, è possibile definire la trasformazione in un file in formato \textit{json} piuttosto che effettuare una trasformazione per ogni colonna all'interno del codice.
+Un esempio di \textit{column mapping} è riportato in appendice nel listato~\ref{code:column-mapping}.
+
+Successivamente, vengono calcolate delle statistiche in senso generico a partire da informazioni sui clienti;
+in particolare, per ogni cliente si raggruppano l'insieme dei suoi rapporti con la banca, i saldi relativi a ciascun rapporto e il suo profilo, che riassume i dati sul rischio d'investimento del cliente stesso.
+Il listato~\ref{code:stats-joins} mostra come avvengono le trasformazioni di \textit{group by} e \textit{join}.
+
+\input{code/stats-joins}
+
+Si fa notare come, in seguito alla trasformazione di \textit{group by}, sia necessaria un'operazione di aggregazione per riottenere un \textit{Dataset}:
+tale trasformazione infatti restituisce un \href{https://spark.apache.org/docs/latest/api/scala/org/apache/spark/sql/RelationalGroupedDataset.html}{\texttt{RelationalGroupedDataset}}.
+In questo caso, l'aggregazione corrisponde ad una \texttt{collect\_list}, la quale restituisce una lista di oggetti relativi ad una espressione-colonna.
+L'espressione colonna passata come argomento corrisponde al mapping in \textit{camel case} di tutte le colonne dei \textit{Dataset}.
+Quindi, in questo modo, si vanno a raggruppare tutti i dati relativi a ciascun cliente, senza tralasciare nessun campo.
+
+La fase successiva di questo batch consiste nella creazione delle richieste per gli \textit{engine} a partire dalle statistiche calcolate.
+Per tale scopo viene sfruttato il metodo \texttt{mapPartitions} che permette di applicare una determinata funzione \textbf{ad ogni partizione del \textit{Dataset}}.
+
+\input{code/map-partition}
+
+Il metodo \texttt{mapPartitions}, prende come argomento anche un \texttt{Encoder} che specifica la struttura del \textit{Dataset} in output alla funzione di \textit{map}.
+Trattandosi di un \textit{DataFrame}, l'\texttt{Encoder} è generico in \texttt{Row} e specifica nomi e tipi delle colonne.
+Come si vede nel listato~\ref{code:map-partition}, \texttt{rows} fa riferimento alle righe contenute in ciascuna partizione del \textit{DataFrame} e, per ognuna, vengono poi create le richieste.
+
+\subsubsection{Integrazione Dati \textit{Customer}}\label{subsubsec:customer}
+L'ultimo batch della sequenza ha il compito di scrivere su un indice \textit{OpenSearch} le informazioni integrate con le chiamate massive agli \textit{engine}.
+Questo perché poi diversi front end e applicativi \textit{as a Service} andranno a prelevare i dati direttamente dall'indice con delle chiamate REST\@.
+Per farlo è necessario ottenere prima tutti i dati sui clienti e integrarli con le risposte ottenute dagli \textit{engine} alle chiamate massive.
+Una volta fatto ciò, è stato necessario individuare una libreria di AWS aggiornata per l'esecuzione di operazioni \textit{CRUD} sugli indici.
+Nello specifico, ogniqualvolta si esegua il batch, questo deve effettuare le seguenti operazioni:
+\begin{enumerate}
+    \item Creazione di un nuovo indice su cui andranno scritti i nuovi dati integrati e aggiornati.
+    \item Rimuovere l'\textit{alias} di \textbf{master} a tutti gli indici precedenti che lo posseggono.
+    \item Aggiungere l'\textit{alias} di master al nuovo indice creato.
+    \item Eliminare tutti gli indici caricati prima di 10 giorni dalla data corrente.
+\end{enumerate}
+Gli \textit{alias} vengono gestiti in questo modo in quanto le varie applicazioni che fanno uso degli indici, invocano le chiamate facendo riferimento all'\textit{alias} di \textbf{master}.
+In poche parole, si tratta di un meccanismo per avere sempre una versione univoca e aggiornata dei dati sugli indici, riuscendo però a mantenere gli indici dell'ultimo periodo in caso di necessità come eventuali errori o confronti da fare.
+In questo modo, l'aggiornamento dell'indice master risulta trasparente ai programmi che invocano chiamate su \textit{OpenSearch} e questi non hanno alcuna dipendenza dalla procedura.
+In particolare, gli indici vengono creati con il seguente pattern per quanto riguarda il nome:
+\[<tenant>-<environment>-pfp-<time>\]
+dove \texttt{tenant} corrisponde al nome del progetto o del cliente a cui si fa riferimento, \texttt{environment} corrisponde all'ambiente su cui sta eseguendo il batch (ad esempio, su ambiente di sviluppo coincide con \textit{dev}) e \texttt{time} corrisponde al \textit{timestamp} del momento in cui viene creato l'indice, in modo da poter capire la cronologia degli indici.
+Invece, l'alias di master corrisponde a una stringa creata con il seguente pattern:
+\[<tenant>-<environment>-master\]
+in modo da avere una gestione \textbf{multi-tenant} degli indici per ogni ambiente di sviluppo.
+
+Per realizzare tutto ciò, è stata implementata una componente che utilizza le librerie di AWS e mette a disposizione dei metodi CRUD per indici e \textit{alias}.
+Al momento, tale componente è stata inserita nel progetto, ma per sviluppi futuri potrebbe essere integrata in libreria di Prometeia in modo da poter essere riutilizzata da programmi Scala che devono interagire con indici \textit{OpenSearch}.
+Il listato~\ref{code:opensearch} mostra la procedura di creazione di un indice e conseguente scrittura dei record.
+
+\input{code/opensearch}
+
+Si fa notare che, per la scrittura efficiente dei record del \textit{Dataset} contenente i dati integrati sui clienti, viene utilizzata la funzione \texttt{foreachPartition}.
+Quest'ultima permette di eseguire la procedura specificata al suo interno in ciascuna partizione del \textit{Dataset}.
+In particolare, si crea una connessione con l'indice all'interno di ogni partizione e si deserializzano le informazioni per ciascun record in formato \textit{json}, cioè il formato con cui vengono mantenute le informazioni sugli indici di \textit{OpenSearch}.
+In seguito, per garantire una scrittura più efficiente dei record sull'indice, questi vengono divisi in porzioni dette \textit{chunk}.
+La creazione dell'indice, oltre al nome dello stesso, richiede di specificare una classe specificata \textit{ad hoc}:
+questo perchè gli indici \textit{OpenSearch} necessitano di un \textbf{mapping} che definisca i tipi dei campi al loro interno.
+Quindi la classe \texttt{Customer} contiene il modello dei dati (nomi e tipi dei campi) che appariranno sull'indice.
+La serializzazione della classe è stata affrontata creando una annotazione apposita, \texttt{OpenSearchMapping}, da utilizzare nei campi di \texttt{Customer} (parzialmente mostrata nel listato~\ref{code:customer}).
+Durante la procedura, vengono iterati tramite \textbf{reflection} tutti i campi della classe che hanno tale annotazione:
+in questo modo, è stato possibile definire come serializzare ciascun campo con tipo primitivo in un oggetto complesso.
+Per i campi con tipo non primitivo è stata applicata la stessa procedura in maniera ricorsiva (ad esempio, per costruire una lista di elementi).
+
+\input{code/customer}
+
+\subsection{Implementazioni di Baseline}\label{subsec:baseline-implementation}
+In questa sezione vengono riportati i punti salienti delle implementazioni di ciascun batch realizzato a prodotto.
+
+\subsubsection{Data Validation}\label{subsubsec:baseline-data}
+L'implementazione di questo progetto si è limitata alla realizzazione del catalogo degli strumenti.
+Quindi inizialmente vengono caricati solo i flussi necessari per ottenere le informazioni del catalogo degli strumenti finanziari di Baseline.
+In particolare, sono stati utilizzati flussi \textit{mock}, cioè appositamente creati per sviluppare il programma, ma che comunque rispettano il tracciato di riferimento degli strumenti finanziari:
+il primo è stato prodotto internamente, mentre il secondo è stato prelevato dal PFP di un progetto.
+Il primo è stato quindi arricchito di informazioni contenute nel secondo e sono state effettuate delle trasformazioni diverse per output differenti.
+Nello specifico, per ogni output realizzato è stata effettuata una \textit{left join} tra il flusso prodotto internamente e quello esterno:
+in questo modo è stato possibile mantenere le dimensioni del primo, arricchendolo con alcuni dati contenuti solo nell'altro.
+
+Successivamente, viene rieseguito il ciclo di validazione e trasformazione dei flussi a partire da quelli prodotti in output dalla parte precedente (che costituiscono il flusso degli strumenti) e da altri contenenti informazioni da inserire nel catalogo.
+A livello architetturale, questa parte corrisponde a quella effettuata per il progetto.
+Di conseguenza, si riporta e si commenta nel listato~\ref{code:window} una trasformazione particolare.
+
+\input{code/window}
+
+Il requisito di questa trasformazione corrisponde ad individuare il record con il campo \texttt{value} più elevato per ciascuno strumento (identificato dal codice \textit{isin}) all'interno del flusso \texttt{mappatura}.
+Per farlo, è stata realizzata una \textit{window function}, la quale permette di individuare un rango all'interno di un gruppo di record a seconda di un determinato ordinamento.
+In questo caso, è stata definita la funzione finestra ordinando i record per il campo desiderato in maniera decrescente;
+dopodiché, è stata creata la colonna \texttt{rank} a partire dal numero di riga successivo all'ordinamento.
+In questo modo, è stato poi possibile filtrare il \textit{Dataset} per i soli record aventi rango 1, cioè la prima occorrenza di ciascun strumento con il campo \texttt{value} più elevato.
+
+\section{Casi particolari}\label{sec:features}
+Questa sezione è dedicata alla descrizione di \textit{feature} particolari, degne di nota, realizzate nei diversi progetti.
+
+\subsection{Migrazioni}\label{subsec:migrations}
+La \textit{feature} per le migrazioni è stata complessa da realizzare in quanto porta con sè una serie di complicazioni.
+Per migrazioni si intendono cambiamenti di grandi quantità di dati dovuti a eventi specifici o variazioni generiche di informazioni sui clienti finali della banca.
+Un esempio molto semplice può essere un cliente che cambia banca:
+questa variazione non provoca la perdita di tutti i dati e le informazioni sul cliente, bensì richiede di applicare una modifica;
+nel modello trattato, questa informazione è contenuta dalla tabella di anagrafica dei clienti.
+Nel caso specificato, si tratterebbe di cambiare il campo \texttt{CODICEBANCA} ed eventualmente il campo \texttt{CODICECLIENTE} nel caso la nuova banca decidesse di assegnarne uno nuovo.
+La complessità del caso, in realtà, è dovuta al fatto che un cambiamento di un singolo record in questa tabella richiede l'applicazione della modifica in tutti i flussi che presentano una chiave esterna su di essa:
+ad esempio, la tabella sui rapporti di ciascun cliente con la banca, contiene la \textit{foreign key} della tabella dei clienti;
+quindi se la chiave del cliente cambia di valore, diventa necessario applicare la variazione anche in quest'altra tabella, in quanto altrimenti si perderebbero le relazioni tra queste.
+La situazione diventa maggiormente complessa considerando che alcune migrazioni avvengono su flussi con chiavi molto lunghe, ma soprattutto con molti altri flussi che hanno una dipendenza da essi.
+
+Data la predisposizione dei clienti ad effettuare migrazioni, sia per eventi speciali sia per ordinaria amministrazione, è stato necessario realizzare la \textit{feature} in modo da poterla riutilizzare in occasioni successive.
+Grazie a \textit{Scala} è stato possibile implementarla in maniera funzionale, come mostra il listato~\ref{code:migrations}.
+
+\input{code/migrations}
+
+La \textit{feature} è stata inserita in fase di ETL, nello specifico nello step di \textit{afterDataValidation} spiegato nella sezione~\ref{subsubsec:data}:
+quindi si considera che tutti i dati trattati in questo punto siano validi, in particolare non duplicati e censiti in tutte le tabelle in relazione tramite chiave esterna.
+L'algoritmo individuato prende in input due flussi:
+\begin{itemize}
+    \item il flusso della tabella su cui va applicata la migrazione (\texttt{originalTable});
+    \item il flusso contenente tutte le migrazioni da applicare (\texttt{migrations});
+    queste sono contenute all'interno di un flusso dedicato in quanto possono richiedere decine di coppie di campi, dove una coppia contiene il vecchio valore del campo e quello nuovo.
+\end{itemize}
+Sebbene si possa pensare che può bastare una semplice \textit{join} tra questi, in realtà è necessario prendere delle precauzioni.
+Infatti, c'è la possibilità che un record risultato da una migrazione sia già stato erroneamente inserito dalla banca:
+in questo caso, l'applicazione della migrazione sul record "vecchio" genererebbe una duplicazione che non verrebbe rimossa visto che tale controllo è già avvenuto.
+Quindi, la \textit{join} tra i due flussi serve ad individuare dei candidati per la migrazione, ovvero i record da migrare nel caso ideale in cui non ci siano già dati migrati.
+In seguito, la \textit{leftanti join} rimuove dai record migrati quelli già presenti nella tabella originale.
+Questo risultato va unito con tutti i dati della tabella originale, esclusi i record in comune con i tutti i candidati precedentemente individuati.

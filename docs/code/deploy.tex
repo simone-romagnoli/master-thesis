@@ -1,0 +1,40 @@
+\begin{lstlisting}[
+    label=code:deploy,
+    language=yaml,
+    style=yamlStyle,
+    caption=\textit{GitHub Action} che gestisce il \textit{deployment} di un programma su ambiente di sviluppo.
+]
+name: Deploy Dev
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          cache: maven
+      - name: Build with Maven
+        run: mvn package --settings settings.xml
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: eu-south-1
+      - name: Copy libraries to s3
+        env:
+          bucket: s3://basepft-dev-eu-south-1
+          path: glue/source/etl
+          tenant: basepft
+        run: |
+          aws s3 cp src/main/scala/it/prometeia/MainData.scala ${bucket}/${path}/
+          aws s3 cp target/${tenant}-scala-spark-*.*.*-SNAPSHOT.jar ${bucket}/${path}/${tenant}-scala-spark.jar
+\end{lstlisting}

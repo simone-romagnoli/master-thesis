@@ -1,0 +1,35 @@
+\begin{lstlisting}[
+    label=code:map-partition,
+    style=myScalastyle,
+    caption=Invocazione del metodo \texttt{mapPartitions}.
+]
+val massives: List[MassiveRequest] = List(
+  BreakdownAdeguatezza,
+  BreakdownCliente,
+  BreakdownPosizione
+)
+
+val outputSchema = StructType(Seq(
+  StructField("type", StringType),
+  StructField("value", StringType)
+))
+implicit val encoder: ExpressionEncoder[Row] = RowEncoder(outputSchema)
+
+stats.mapPartitions(rows => {
+  // Create deserialization and serialization object mapper
+  val deserializer = new ObjectMapper()
+  val xmlSerializer = new XmlMapper()
+
+  // Each row will be mapped into 3 massives
+  rows.flatMap(row => {
+    val statsInput = deserializer.readValue(row.json, classOf[StatisticheInput])
+
+    // Serialize each massive request into xml code
+    massives.map(massive =>
+      val request = MassiveRequestBuilder.build(massive, statsInput)
+      val xml = xmlSerializer.writeValueAsString(request)
+      Row.fromSeq(Seq(massive.toString, xml))
+    )
+  })
+})
+\end{lstlisting}

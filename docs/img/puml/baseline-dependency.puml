@@ -1,0 +1,9 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Baseline Batch Validazione;
+:Baseline Batch Catalogo Strumenti;
+stop
+
+@enduml

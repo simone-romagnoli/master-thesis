@@ -1,0 +1,17 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+start
+:Batch Validazione;
+fork
+:Batch Catalogo Strumenti;
+:Batch Calcolo Rendimenti;
+:Batch Scrittura su database;
+fork again
+:Batch PFP Data Integration;
+:Batch Statistiche;
+end fork
+:Batch Integrazione Dati Customer;
+stop
+
+@enduml

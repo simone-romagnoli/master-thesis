@@ -1,0 +1,31 @@
+\begin{lstlisting}[
+    label=code:stats-joins,
+    style=myScalastyle,
+    caption=Raggruppamenti di diversi \textit{Dataset} per quello dei clienti e corrispondenti operazioni di \textit{join}.
+]
+// Group accounts by customer's primary key
+val accountsByCustomer = accounts.df
+  .groupBy(customers.primaryKey.map(col):_*)
+  .agg(collect_list(struct(accountsMapping:_*)).as("rapporti"))
+
+// Group accosalesnts by customer's primary key
+val salesByCustomer = sales.df
+  .join(accounts.df, accounts.primaryKey)
+  .groupBy(customers.primaryKey.map(col):_*)
+  .agg(collect_list(struct(salesMapping:_*)).as("saldi"))
+
+// Apply column mapping to riskProfile
+val riskProfile = profile.df
+  .withColumn("profiloRischio", struct(profileMapping:_*))
+
+// Join customers with grouped tables
+val output = customers.df
+  .join(accountsByCustomer, customers.primaryKey, "left")
+  .join(riskProfile, customers.primaryKey, "left")
+  .join(salesByCustomer, customers.primaryKey, "left")
+  .select(
+    col("rapporti"),
+    col("saldiSottostantiByCliente"),
+    col("profiloRischio")
+  )
+\end{lstlisting}

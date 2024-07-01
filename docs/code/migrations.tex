@@ -1,0 +1,25 @@
+\begin{lstlisting}[
+    label=code:migrations,
+    style=myScalastyle,
+    caption=Algoritmo generico di applicazione di una migrazione su un singolo flusso.
+]
+private def applyMigrations(originalTable: OpTable, migrations: OpTable, joinCondition: Column, ...): DataFrame = {
+  // Migrations applied to a stream
+  val candidates = originalTable.df.join(migrations.df, joinCondition)
+
+  // Out of all the migrated records, keep only those that are not already existing in the original table
+  val toMigrate = candidates
+    .join(originalTable.df, originalTable.primaryKey, "leftanti")
+    .drop(migrations.df.columns: _*)
+
+  // Filter the original table keeping the records that DO NOT appear in candidates
+  val toKeep = originalTable.df.join(
+    candidates.drop(migrationFields:_*),
+    originalTable.primaryKey,
+    "leftanti"
+  )
+
+  // Union between migrated and kept
+  toKeep.unionByName(toMigrate)
+}
+\end{lstlisting}

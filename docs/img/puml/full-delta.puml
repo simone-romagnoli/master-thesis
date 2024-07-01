@@ -1,0 +1,47 @@
+@startuml
+
+control Validation as valid
+package import {
+  package FLUSSO1 as i1 {
+    frame flusso1.csv
+  }
+  package FLUSSO2 as i2 {
+    frame flusso2.txt
+  }
+  package FLUSSO3 as i3 {
+    frame flusso3.txt
+  }
+  package FLUSSO4 as i4 {
+    frame flusso4.csv
+  }
+}
+
+package output as output1 {
+    package output as output2 {
+      package FLUSSO1 as o1 {
+        card flusso1.snappy.parquet
+      }
+      package FLUSSO2 as o2 {
+        card flusso2.snappy.parquet
+      }
+    }
+    package store as store {
+      package FLUSSO3 as o3 {
+        card flusso3.snappy.parquet
+      }
+      package FLUSSO4 as o4 {
+        card flusso4.snappy.parquet
+      }
+    }
+}
+i1 -down--> valid
+i2 -down--> valid
+i3 -down--> valid
+i4 -down--> valid
+valid -down--> o1
+valid -down--> o2
+valid -down--> o3
+valid -down--> o4
+
+
+@enduml

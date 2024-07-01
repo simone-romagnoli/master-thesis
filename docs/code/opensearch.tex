@@ -1,0 +1,23 @@
+\begin{lstlisting}[
+    label=code:opensearch,
+    style=myScalastyle,
+    caption=Creazione di un indice su \textit{OpenSearch} e conseguente scrittura di record.
+]
+// Create the index
+openSearchManager.Indices.create(indexName, classOf[Customer])
+
+// Write all information about the customers
+customers.rdd.foreachPartition(rows => {
+  // Connect to the index
+  val localManager = OpenSearchManager(hostname, port)
+
+  // Deserialize customers into chunks
+  val customers = rows.toList.map(row => row.json)
+  val bulks = customers.grouped(bulkSize).toList
+
+  // For each chunk, write on index
+  bulks.foreach(bulk =>
+    localManager.Documents.bulk(indexName, bulk, classOf[Customer])
+  )
+})
+\end{lstlisting}

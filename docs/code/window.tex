@@ -1,0 +1,16 @@
+\begin{lstlisting}[
+    label=code:window,
+    style=myScalastyle,
+    caption=Applicazione di una \textit{window function}.
+]
+val window = Window.partitionBy("isin")
+  .orderBy(col("value").desc, col("acCode").asc)
+
+val mainRank = mappatura.df
+  .withColumn("rank", row_number().over(window))
+  .filter(col("rank") === lit(1))
+  .select(col("isin"), col("acCode").as("mainCode"))
+
+strumenti.df = strumenti.df
+  .join(mainRank, col("code") === col("isin"), "left")
+\end{lstlisting}

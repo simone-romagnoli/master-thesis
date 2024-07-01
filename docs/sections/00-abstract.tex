@@ -2,26 +2,16 @@
 \addcontentsline{toc}{chapter}{Abstract}
 \markboth{Abstract}{Abstract}
 
-Questa tesi si incentra sul lavoro svolto durante il tirocinio curriculare presso l'azienda \textit{Prometeia S.P.A}.
-\textit{Prometeia} è un provider di servizi di consulenza, soluzioni tecnologiche e ricerca all'avanguardia~\cite{Prometeia-aboutus}.
+Questa tesi si incentra sul lavoro svolto durante il tirocinio curriculare presso l'azienda \textit{Prometeia S.P.A}, provider di servizi di consulenza, soluzioni tecnologiche e ricerca all'avanguardia~\cite{Prometeia-aboutus}.
 Il tirocinio si è svolto presso la sede di Bologna.
 
 Il progetto riguarda l'integrazione di dati (anche detta \textit{data integration}) dei clienti finali di una banca.
-In particolare, il cliente in questione (cioè la banca) ha richiesto di far convergere tutti i dati dei clienti finali in un unico repository, senza che questi debbano essere prelevati da molteplici sorgenti.
-In questo modo, sarebbe possibile avere dei dati omogenei, in un unico formato e in linea con uno standard.
+In particolare, la banca in questione ha richiesto di far convergere tutti i dati dei clienti finali in un unico repository, senza che questi debbano essere prelevati da molteplici sorgenti.
+In questo modo, è possibile avere dei dati normalizzati, in un formato definito ed in linea con uno standard del prodotto.
 Ad esempio, uno dei casi d'uso di tali dati coincide con la possibilità di poterli mostrare in un'interfaccia grafica come un \textit{front end} web.
-Il progetto era già stato realizzato, ma l'evolversi dei dati (in quantità e disomogeneità) ha introdotto la necessità di migliorare le prestazioni del software.
+Il progetto era già stato realizzato in modo tradizionale mediante l'uso di un database relazionale, ma l'evolversi dei dati (in quantità e disomogeneità) ha richiesto di migliorare le prestazioni del software.
 Per sopperire a tale problema si è quindi pensato di adoperare una tecnologia in grado di gestire al meglio i \textit{Big Data}: nello specifico, è stata utilizzata la libreria \textbf{Spark} di \textit{Apache Hadoop}.
-La libreria di \textit{Apache Hadoop} consiste in un framework che permette il \textbf{processing distribuito} di grandi dataset su molteplici cluster di computer utilizzando semplici modelli di programmazione~\cite{Apache-hadoop}.
-% Tale framework è stato progettato per poter scalare da singoli server a migliaia di macchine, ciascuna dotata di ampie capacità computazionale e di memorizzazione.
-
-Per spiegare al meglio il processo evolutivo del progetto, il lavoro di tesi è stato suddiviso nei seguenti capitoli:
-
-\begin{itemize}
-    \item \textbf{Capitolo 1} - Introduzione al problema;
-    \item \textbf{Capitolo 2} - Analisi tecnica;
-    \item \textbf{Capitolo 3} - Progettazione e descrizione dell'architettura;
-    \item \textbf{Capitolo 4} - Descrizione delle implementazioni.
-\end{itemize}
+La libreria di \textit{Apache Hadoop} consiste in un framework che permette il \textbf{processing distribuito} di grandi dataset su un cluster di molteplici computer utilizzando semplici modelli di programmazione~\cite{Apache-hadoop}.
+Per sfruttare al meglio tale tecnologia, essa è stata utilizzata in combinazione con il paradigma del \textbf{cloud computing} e, in particolare, con i servizi di \textit{Amazon Web Services}.
 
 \clearpage

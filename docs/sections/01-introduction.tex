@@ -4,5 +4,207 @@
 In questo capitolo viene brevemente introdotto il problema per fornire una visione più specifica del lavoro svolto.
 
 \section{Il problema}\label{sec:problem}
+
+\subsection{Analisi del problema}\label{subsec:problem-analysis}
+Il problema in questione è quello dell'\textbf{integrazione di dati}, vale a dire, l'unione di informazioni provenienti da diverse sorgenti sotto un'unica vista unificata.
+Per semplicità e convenzione, ci si riferisce a tale concetto con il termine \textit{data integration}.
+Tale processo coinvolge una serie di operazioni a partire dalla mera acquisizione del dato, per arrivare alla produzione di un dato pulito e più facilmente fruibile a una qualsiasi entità esterna che vuole accedervi.
+Le ragioni per cui si effettua \textit{data integration} sono molteplici:
+\begin{itemize}
+    \item si vogliono raccogliere dati provenienti da molteplici sorgenti e combinarli poiché semanticamente correlati tra loro;
+    \item si vogliono uniformare dati che assumono formati diversi, ad esempio un campo di una tabella che può assumere un formato di tipo booleano in una sorgente e formato di tipo intero in un'altra, poiché espresso con i valori 0 o 1;
+    \item si vogliono pulire dati considerati sporchi, poiché contenenti informazioni inutilizzate, dati duplicati (quindi ridondanti) oppure campi non valorizzati, cioè incompleti (ad esempio, la valorizzazione di un campo di una tabella con una stringa vuota);
+    \item si vuol fare un \textit{enrichment} dei dati poiché si vogliono ottenere informazioni deducibili da quelle disponibili, ma non direttamente espresse, per via della loro necessità.
+\end{itemize}
+Queste, assieme ad una numerosa serie di casi particolari, sono problematiche che al giorno d'oggi influenzano la maggior parte dei sistemi che gestiscono ingenti moli di dati.
+
+Le cause di questi problemi sono da ricercare all'interno della \textbf{rivoluzione dei Big Data}.
+\textit{Big Data} è un termine che fa riferimento a grandi \textit{dataset} dotati di strutture complesse e variegate, che comportano le difficoltà di memorizzazione, analisi e presentazione per ulteriori processi e attività~\cite{big-data-review}.
+In particolare, è convenzionalmente noto che i \textit{big data} siano caratterizzati dalle seguenti proprietà:
+\begin{itemize}
+    \item \textbf{Volume} - vengono prodotti in grandi quantità e dimensione;
+    una sorgente può arrivare a produrre molteplici terabyte al giorno.
+    Si tratta di una quantità di dati che non può essere immagazzinata o elaborata dai sistemi convenzionali e che richiede delle tecnologie \textit{ad hoc}.
+    \item \textbf{Velocità} - spesso i dati vengono prodotti ed elaborati da altri processi in tempo reale.
+    \item \textbf{Varietà} - i \textit{big data} sono eterogenei;
+    si differenziano per dimensione, formato ed eventuale struttura interna.
+    \item \textbf{Veracità} - nel senso che possono essere considerati affidabili, quindi risultano una buona base per analisi aziendali a supporto di decisioni a livello operativo, manageriale ed eventualmente anche direzionale.
+    \item \textbf{Valore} - in relazione al fatto che possono essere utilizzati per ottenere un vantaggio strategico.
+    La loro analisi e le previsioni che possono derivarne, possono trasformarsi direttamente in valore per le aziende.
+    Il classico esempio è quello di un'azienda che si basa sull'analisi dei dati relativi ai consumi per prevedere il comportamento di acquisto dei consumatori e proporre dei prodotti, dei servizi o dei cambiamenti nel business, sulla base di queste previsioni.
+\end{itemize}
+L'enorme quantità di dati prodotti a velocità incalzante rappresenta un problema per le aziende \textit{data-driven}, ovvero quelle aziende le cui attività decisionali si basano sui flussi di dati.
+Nello specifico, per tali aziende è necessario individuare un metodo strutturato e robusto per la gestione dei \textit{big data}, che garantisca anche delle buone prestazioni, in grado di far ottenere un vantaggio competitivo per l'azienda.
+
+\subsection{Il caso di Prometeia}\label{subsec:problem-prometeia}
+\textit{Prometeia} è un'azienda che fornisce servizi di consulenza, soluzioni tecnologiche e ricerca all'avanguardia~\cite{Prometeia-aboutus}.
+Le sue sedi sono distribuite sul territorio europeo, nel quale si trovano la maggior parte dei suoi clienti.
+Il target aziendale consiste in realtà finanziare con mercati estesi anche a livello internazionale.
+Vista la premessa fatta sui \textit{big data} nella sezione~\ref{subsec:problem-analysis}, si può dedurre che quello dell'integrazione di dati sia solo uno dei diversi problemi che \textit{Prometeia} deve affrontare con i suoi clienti.
+In aggiunta, ogni cliente richiede servizi diversi: per quanto il dominio trattato possa essere simile, ogni cliente ha processi gestiti in maniera del tutto unica.
+Per fare un esempio concreto, si considerino due banche diverse che possono richiedere un servizio relativo ai rendimenti degli strumenti finanziari per i propri clienti.
+I clienti della banca possono investire su diversi strumenti finanziari e ottenere, nel tempo, un rendimento relativo alla crescita o perdita degli investimenti.
+Per quanto gli strumenti finanziari siano un concetto comune a tutte le banche, ciascuna gestisce il portafoglio dei propri clienti in modo diverso, con dati e informazioni uniche rispetto alle altre realtà finanziarie.
+Questo aspetto costringe \textit{Prometeia} a intraprendere progetti separati per ciascun cliente nonostante trattino problemi comuni.
+Ovviamente, ogni progetto non viene eseguito disegnando la soluzione dal principio ogni volta, bensì si cerca di seguire una struttura comune per ogni tipologia di servizio richiesto.
+
+Considerando il probleam dell'integrazione di dati, ogni cliente presenta una serie di flussi di dati da integrare, ciascuno con una propria logica e un proprio schema.
+Questi flussi contengono diverse informazioni, che vanno propriamente trasformate e arricchite, fino ad ottenere un'unica sorgente che le contiene tutte e che può essere consultata da diversi servizi.
+Questa tesi approfondisce il caso di un cliente che rimarrà anonimo per motivi di privacy e, in particolare, di un progetto relativo ai rendimenti dei clienti della banca.
+
+Il progetto in considerazione si colloca all'interno dei progetti di ETL di Prometeia.
+Prometeia considera \textit{data integration} (o ETL) l'insieme di progetti che riguardano l'integrazione di dati tra loro collegati, per ottenere insiemi di informazioni consistenti e connesse tra loro.
+Il progetto in questione fa parte di un altro macro-progetto chiamato \textbf{PFP}, ovvero \textit{Personal Financial Planner}.
+Il PFP è un prodotto software che le banche utilizzano per aiutare i propri clienti nella gestione di diversi aspetti;
+in particolare, li guida nella gestione di investimenti, \textit{asset building}, \textit{wealth management}, risparmi e altre decisioni importanti riguardanti le proprie finanze.
+La parte di ETL realizzata riguarda il calcolo dei rendimenti dei clienti che hanno effettuato degli investimenti.
+Un rendimento in ambito finanziario rappresenta l'utile o la perdita di un investimento.
+Per il cliente di una banca è possibile investire in strumenti finanziari, che possono essere obbligazioni, azioni, fondi e tanti altri strumenti di investimento.
+Ad esempio, il rendimento di un'obbligazione è il tasso di interesse che rende il valore attuale della successione di pagamenti esattamente pari al prezzo attuale~\cite{rendimenti}.
+
+Il calcolo dei rendimenti è un processo che può essere fatto su diverse finestre temporali.
+Ad esempio, può essere calcolato nell'arco di un giorno o di anni.
+Le finestre temporali più utilizzate e richieste sono:
+\begin{itemize}
+    \item l'ultimo anno (ad esempio, se la richiesta è fatta il 17 marzo 2023, l’ultimo anno va dal 01 gennaio 2022 al 31 dicembre 2022);
+    \item l'ultimo anno fino alla data corrente (corrispondente ai 365 giorni precedenti alla data corrente);
+    \item gli ultimi 3 anni;
+    \item gli ultimi 5 anni.
+\end{itemize}
+
+La richiesta del cliente (la banca) è quella di poter visualizzare tutti i dati relativi ai propri clienti finali su un front end con un'interfaccia intuitiva.
+I dati vengono forniti direttamente dalla banca in flussi, sotto forma di grandi file spesso in formato \textit{csv}.
+Uno dei requisiti del progetto è anche quello di riuscire ad automatizzare il processo di correzione dei flussi sbagliati.
+Vista la dimensione e l'eterogeneità dei flussi, il caso che il cliente mandi dati non corretti è più che ricorrente.
+Nei casi normali, quello che si farebbe sarebbe contattare il cliente e richiedere un suo intervento affinchè possa mandare una nuova versione dei dati aggiornata e corretta.
+Tuttavia, effettuare tale procedura ogni volta che si individua un dato non corretto equivarrebbe ad impegnare tutto il tempo di una o più risorse per gestire le relazione con il cliente.
+
 \section{Possibili soluzioni}\label{sec:solutions}
+Il processo attraverso il quale viene effettuata l'integrazione di dati, partendo dalla loro estrazione, fino alla loro trasformazione e caricamento finale è detto \textbf{ETL}.
+Il termine \textit{ETL} (\textit{Extract-Transform-Load}) fa riferimento ad insiemi di processi e moduli software responsabili per il reperimento di informazioni da varie sorgenti, la loro pulizia, trasformazione ed integrazione, e il loro caricamento in \textit{data warehouse} aziendali~\cite{etl-def}.
+Lo sviluppo dell'\textit{ETL} è potenzialmente uno dei componenti fondamentali per la costruzione di un \textit{data warehouse} sicuro e robusto;
+infatti, risulta essere una delle attività più complesse e richiede la maggior parte del tempo e risorse aziendali per l'implementazione~\cite{etl-dwh}.
+
+Per un'azienda come Prometeia, che si interfaccia con diversi clienti, esistono due alternative:
+\begin{enumerate}
+    \item Realizzare soluzioni \textit{on-premise} per ogni cliente, personalizzando nel dettaglio il processo di integrazione dati ad ogni nuovo progetto.
+    \item Individuare le porzioni comuni dei modelli trattati dai diversi clienti e realizzare un prodotto vendibile \textit{as a service}.
+\end{enumerate}
+Non si può dare per scontato che la seconda soluzione sia la migliore in tutti i casi:
+possono esistere situazioni in cui un'azienda si trovi di fronte a richieste di clienti completamente diverse tra loro e quindi risulterebbe difficile realizzare un prodotto di base o riutilizzabile per soddisfarle.
+Tuttavia, se le richieste dei clienti fossero accomunabili in parte, si potrebbe creare un insieme di moduli interni da riutilizzare per diversi clienti.
+L'idea consiste nell'estendere e customizzare un servizio pre-esistente che possa soddisfare requisiti diversi tra loro, ma riguardanti la stessa problematica o dominio.
+Applicando tale principio ad un insieme di moduli, si riuscirebbe ad ottenere un miglioramento notevole:
+innanzitutto, si risparmierebbe lavoro nella realizzazione delle medesime soluzioni riadattate;
+poi, si otterrebbe uno standard qualitativo che può contraddistinguere l'azienda nel mercato.
+
+Dal punto di vista tecnologico, le diverse soluzioni che si possono individuare vanno valutate in termini di prestazioni e scalabilità.
+Un sistema di ETL che opera sui \textit{big data} deve garantire:
+\begin{itemize}
+    \item che all'aumentare del volume dei dati, non peggiorino esponenzialmente le prestazioni;
+    \item che all'aumento del volume dei dati non corrispondano problemi di disponibilità del servizio, cioè che venga pregiudicato il funzionamento stesso del sistema;
+    \item che il sistema produca dati affidabili in buoni tempi (da valutare a seconda delle dimensioni dei dati);
+    \item che il mantenimento dei dati non garantisca un problema;
+    \item che, in generale, gli \textit{stakeholder} dei dati prodotti possano fare affidamento su di essi.
+\end{itemize}
+Quindi, oltre ad organizzare il sistema con un'architettura sufficientemente robusta, è necessario scegliere accuratamente le tecnologie che ne sono a supporto.
+Ad oggi, diverse tecnologie \textit{open source} sono state sviluppate e messe sul mercato con il diretto scopo di implementare sistemi di ETL.
+Ma, in generale, la grande distinzione per la realizzazione di sistemi di ETL consiste nella scelta di utilizzo del \textit{cloud}.
+Infatti, sono diversi i \textit{cloud provider} che sono cresciuti negli ultimi anni fornendo diversi servizi alle aziende, come disposizione di storage o intere piattaforme.
+Tuttavia, nonostante la scalabilità che quest'ultimi possono offire, alcune realtà possono ancora scegliere di non usufruirne per via di vincoli stringenti come l'utilizzo di determinate tecnologie non compatibili.
+
 \section{Soluzione adottata}\label{sec:solution}
+
+Inizialmente Prometeia gestiva i progetti del PFP separatamente, ovvero che realizzava PFP \textit{ex novo} per ogni nuovo cliente e la manutenzione di questi rimaneva separata.
+Quindi i diversi moduli di ciascun progetto, come l'ETL o il front end stesso, venivano gestiti separatamente da team diversi.
+Si trattava di progetti \textit{on premise}, realizzati \textit{ad hoc} per il cliente ed eventualmente installati addirittura direttamente \textit{in loco}.
+Con il passare del tempo e delle esperienze, è stato notato che la maggior parte dei PFP realizzati presentavano componenti molti simili tra loro.
+In particolare, si è notata una somiglianza tra i tipi di dati trattati e alcuni algoritmi (ad esempio il calcolo dei rendimenti degli investimenti).
+Infatti, da un punto di vista macroscopico, ogni banca richiede essenzialmente lo stesso prodotto:
+dato un insieme di flussi di dati, processare e integrare quest'ultimi per mostrarli nel front end.
+Quindi, di fatto, le modalità operative dei vari team in Prometeia all'arrivo di un nuovo progetto corrispondevano a prendere un altro PFP somigliante e fare modifiche per adattarlo al nuovo.
+Questo approccio, in realtà, presenta una serie di problemi:
+\begin{itemize}
+    \item Tale approccio duplica l'\textit{effort} impiegato per la realizzazione dei progetti.
+    Il riadattamento di un modulo software di fatto significa l'applicazione di modifiche che possono apportare nuovi problemi, richiedendo ulteriore tempo da parte dei vari membri dei team.
+    \item Provoca una duplicazione del codice non indifferente.
+    Duplicando il codice, si vanno spesso a creare dei rischi difficili da mitigare e si crea un prodotto dalla difficile manutenzione, sia dal punto di vista della complesità che dell'\textit{effort} richiesto.
+    Ad esempio, anche per fare \textit{bug fixing} di una dipendenza o di una feature, bisognerebbe ricordarsi di applicare la modifica in ogni parte duplicata.
+    \item Ci si potrebbe rendere conto troppo tardi che il progetto di partenza scelto non sia quello più adatto.
+    \item In caso di mancata documentazione sarebbe necessario reperire i responsabili del progetto nel caso sia necessario avere supporto.
+\end{itemize}
+Quindi in Prometeia è nata l'esigenza di cambiare approccio al problema.
+Nello specifico, è stato fatto partire un progetto interno chiamato \textbf{Baseline}.
+Il progetto Baseline corrisponde a una serie di progetti che sono condotti internamente da Prometeia e che quindi vengono considerati come \textbf{prodotto}.
+Per "prodotto" si intende una particolare funzionalità che Prometeia fornisce ai clienti come pacchetto base che può essere esteso a seconda delle esigenze del singolo cliente.
+Alcuni esempi di moduli software realizzati per Baseline sono:
+\begin{itemize}
+    \item Baseline Batch - un modulo che implementa un Enterprise ETL prendendo come riferimento un insieme di flussi base e implementato utilizzando la tecnologia Spark.
+    \item Baseline PFP - un progetto che presenta sia una parte di back end, sia una parte di front end, realizzate rispettivamente con tecnologie \textit{Spring} e \textit{Angular}.
+    Questo progetto, di fatto, rappresenta il nuovo punto di partenza dei nuovi PFP ed è quindi estendibile e customizzabile a seconda delle richieste.
+\end{itemize}
+In sostanza, Baseline è una \textit{suite} di soluzioni software che il cliente può comprare e decidere di estendere a seconda delle proprie esigenze.
+
+Oltre a Baseline, Prometeia ha anche deciso di spostarsi sul \textit{Software as a Service}.
+Vale a dire, che Prometeia ha individuato una serie di moduli software vendibili come \textit{standalone} poiché integrabili con diversi applicativi dei clienti.
+Quindi, a differenza dei vari pacchetti che richiedono comunque un'integrazione, la parte \textit{SaaS}, chiamata \textbf{DWM} (\textit{Digital Wealth Management}), non è altro che un insieme di servizi REST che Prometeia è in grado di vendere nella loro interezza e che le banche possono eventualmente integrare nei loro applicativi non direttamente gestiti da Prometeia.
+Tra questi si possono trovare:
+\begin{itemize}
+    \item Il servizio Catalogo Strumenti, che serve a catalogare tutti gli strumenti finanziari, che quindi risultano integrati e reperibili \textit{as a Service}.
+    \item Il servizio Rendimenti, che permette di ottenere il calcolo dei rendimenti su diverse finestre temporali, come discusso nella sezione~\ref{subsec:problem-prometeia}.
+    \item Il servizio Customer, che presenta un'anagrafica completa dei clienti della banca.
+\end{itemize}
+Ognuno di questi servizi espone varie informazioni che sono utili al PFP, ma anche a eventuali esigenze nuove o esterne che la banca può avere e che non vengono gestite da Prometeia.
+Un possibile caso d'uso può essere:
+una banca ha un suo applicativo \textit{private} che ha bisogno del catalogo degli strumenti completo e integrato.
+Prometeia può quindi vendere solo il catalogo strumenti come servizio REST in un modulo \textit{as a Service}.
+In sostanza, la differenza tra Baseline e DWM consiste nel fatto che il primo è una libreria \textbf{estendibile}, creata appositamente per soddisfare requisiti comuni a più progetti;
+mentre i moduli DWM sono dei servizi \textbf{a sè stanti} sfruttabili \textit{as a Service} sia da clienti, sia da Prometeia stessa all'interno di progetti.
+
+Da quando esiste Baseline, i nuovi PFP hanno sempre fatto uso di questi moduli \textit{SaaS}.
+Per il progetto di tirocinio in considerazione, invece, si tratta di un caso leggermente diverso.
+Infatti, Baseline è nato dopo la realizzazione del PFP per il cliente in questione, che è attivo e operativo da diverso tempo.
+Quindi il PFP in questione non è basato su Baseline, nè fa uso di moduli \textit{SaaS}.
+Nell'ultimo anno però, i nuovi sviluppi per tale cliente hanno integrato una parte del mondo SaaS di Prometeia.
+Un esempio è il \textit{Profiling}, ovvero il software di profilazione \textit{multi-tenant} della clientela.
+\textit{Profiling} è un progetto back end, venduto come \textit{SaaS}, che espone servizi per creare profili, monitorarli per la gestione del rischio, e tante altre funzionalità.
+A questo viene poi associato un front end customizzato.
+Oltre a \textit{Profiling}, è recentemente partita l'integrazione del modulo Baseline dei rendimenti.
+
+Per riassumere, al momento dell'inizio del tirocinio, erano già state implementate le seguenti componenti:
+\begin{itemize}
+    \item Un modulo che implementa l'Enterprise ETL, che include una parte integrata dal prodotto di Baseline più le varie integrazioni a progetto.
+    Questa ha il delicato compito di trasformare i dati della banca in modelli utilizzabili a livello di servizio e delle altre catene di batch.
+    \item Il catalogo strumenti esposto sia come batch interno al progetto, sia come servizio invocabile.
+    \item Il calcolo dei rendimenti, esposto sia a livello di servizio, sia come parte batch a prodotto customizzato per adattarlo alle richieste.
+\end{itemize}
+
+All'interno di questo contesto è iniziata l'attività di tirocinio.
+Vista la durata estesa del rapporto con Prometeia, l'attività di tirocinio non si è limitata alla realizzazione di un solo obiettivo.
+Infatti, oltre ad apprendere ed esplorare la tecnologia Spark, il tirocinio ha mirato all'espansione di progetti già iniziati e al lancio di nuove parti.
+Nello specifico, le attività intraprese e discusse nei capitoli seguenti riguardano:
+\begin{itemize}
+    \item La continuazione della realizzazione di ETL per un cliente con tecnologia Spark, assieme al calcolo dei rendimenti.
+    Tale progetto era già iniziato al momento dell'inizio del tirocinio, ma necessitava di supporto.
+    Quindi tale attività è consistita nel ricevimento quotidiano di task dagli analisti che interagivano direttamente col cliente.
+    Per portare a termine questi task, è stato necessario aggiungere feature a progetto, ma anche effettuare modifiche a prodotto per adattarsi alle richieste.
+    \item L'inizio di una rivisitazione di un progetto per il medesimo cliente, avvicinandolo al mondo del prodotto con tecnologia Spark.
+    In particolare, la realizzazione di alcune parti di un PFP con la prospettiva di abbattere i lunghi tempi d'esecuzione che possono essere ridotti.
+    Questa parte rimarrebbe comunque un progetto realizzato \textit{ad hoc} in quanto non segue la stessa logica del PFP di Baseline.
+    Comunque l'obiettivo rimane il miglioramento dei tempi grazie all'utilizzo di nuove tecnologie e sfruttando i nuovi servizi DWM.
+    \item L'inizio di un progetto per Baseline, riguardante la realizzazione di un batch che implementi il comportamento di un ETL tipico dei progetti per i clienti di Prometeia.
+    L'obiettivo finale di questa parte consiste nella realizzazione dei vari step, quali l'ETL di flussi di dati, il catalogo degli strumenti finanziari, il calcolo dei rendimenti, e altre parti.
+    Nello specifico, il tirocinio ha coperto per intero la realizzazione dell'ETL e del catalogo degli strumenti.
+\end{itemize}
+
+Dal punto di vista tecnologico, \textit{Prometeia} fa generalmente uso di tecnologie \textit{open source}:
+uno dei pregi dell'\textit{open source} è quello dell'affidabilità che deriva da un continuo miglioramento delle applicazioni.
+Mentre i software proprietari legano la fedeltà del cliente attraverso le licenze, l'\textit{open source} mira alla soddisfazione dell’utilizzatore.
+I fornitori di soluzioni \textit{open source}, infatti sono soliti fornire servizi, consulenza e formazione.
+La qualità è garantita dalle relazioni che si instaurano tra gli utilizzatori, i proprietari e la community di programmatori grazie a corsi, documentazioni aggiornate, ma anche dalle continue correzioni degli errori~\cite{open-source}.
+In particolare, per la realizzazione dei sistemi sopra citati, è stato deciso di fare affidamento al \textit{cloud} e ai servizi di \textit{Amazon Web Services}.
+Tale scelta non è nuova a Prometeia:
+infatti, è stata l'ennesima conferma di un paradigma aziendale già utilizzato che ha portato ottimi risultati.
+La combinazione del \textit{cloud} con la possibilità di estendere librerie interne si è rivelato estremamente efficiente da diversi punti di vista:
+in questo modo non solo è possibile effettuare lo \textit{start-up} dei sistemi in maniera veloce, ma risulta anche comodo per allocare nuove risorse su nuovi progetti;
+la modularità dei sistemi realizzati rende molto semplice anche la formazione di personale che deve iniziare a lavorare su progetti appena iniziati.

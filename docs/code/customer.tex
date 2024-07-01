@@ -1,0 +1,17 @@
+\begin{lstlisting}[
+    label=code:customer,
+    style=myJavaStyle,
+    caption=Classe contente informazioni sui clienti utilizzata per scrivere su indici \textit{OpenSearch} serializzando i campi con l'annotazione \texttt{OpenSearchMapping}.
+]
+public class Customer extends OpenSearchMapper {
+
+    @OpenSearchMapping(index = false, values = false)
+    public String customerCode;
+
+    @OpenSearchMapping(dataType = "text")
+    public String fullName;
+
+    @OpenSearchMapping(dataType = "nested", parent = true)
+    public List<Balance> balances;
+}
+\end{lstlisting}

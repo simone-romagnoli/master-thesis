@@ -1,0 +1,20 @@
+@startuml
+
+collections Dataset as ds1
+collections Dataset as ds2
+collections Dataset as ds3
+collections Dataset as ds4
+
+
+
+ds1 -> ds2 : filter
+ds2 -> ds3 : map
+ds3 -> ds4 : join
+
+agent Result1 as res1
+agent Result2 as res2
+
+ds2 -down-> res1 : count
+ds4 -down-> res2 : collect
+
+@enduml

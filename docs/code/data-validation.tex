@@ -1,0 +1,26 @@
+\begin{lstlisting}[
+    label=code:main,
+    style=myScalastyle,
+    caption="Main del batch di validazione dei flussi in input"
+]
+object MainData {
+    def main(sysArgs: Array[String]): Unit = {
+        val spark = SparkSession
+          .builder()
+          .appName("data-integration")
+          .getOrCreate()
+
+        spark.sparkContext.setLogLevel("WARN")
+
+        val config = new Config(spark, sysArgs)
+
+        val jsonContent = scala.io.Source
+        .fromResource("conf/ClientMapping.json")
+        .mkString
+        val batchConfig = Config.readBatchConfig(jsonContent)
+        val manager: Manager = config.fromBatchConf(batchConfig, Some(CustomDataTransformations))
+
+        manager.parallelWrite()
+    }
+}
+\end{lstlisting}

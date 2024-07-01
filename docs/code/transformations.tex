@@ -1,0 +1,25 @@
+\begin{lstlisting}[
+    label=code:transformations,
+    style=myScalastyle,
+    caption=Interfaccia con i metodi per realizzare trasformazioni nei diversi step della validazione
+]
+trait Transformations {
+    def beforeDataValidation(config: Config):
+        Map[String, mutable.Map[String, OpTable] => Unit]
+
+    def afterDataCast(config: Config):
+        Map[String, mutable.Map[String, OpTable] => Unit]
+
+    def afterDuplicatesRemoval(config: Config):
+        Map[String, mutable.Map[String, OpTable] => Unit]
+
+    def afterDiscardedRecordsReuse(config: Config):
+        Map[String, mutable.Map[String, OpTable] => Unit]
+
+    def afterFkConstraintsCheck(config: Config):
+        Map[String, mutable.Map[String, OpTable] => Unit]
+
+    def afterDataValidation(config: Config):
+        Map[String, mutable.Map[String, OpTable] => Unit]
+}
+\end{lstlisting}

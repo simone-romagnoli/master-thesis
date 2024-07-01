@@ -1,0 +1,23 @@
+\begin{lstlisting}[
+    label=code:returns-udf,
+    style=myScalastyle,
+    caption=Query per pulire le informazioni da tenere su database \textit{Postgres} con una \textit{User Defined Function}
+]
+private val performanceBucketUdf = udf(netPerformance => getPerformanceBucket(netPerformance))
+
+private def getPerformanceBucket(netPerformance: Double): Int = netPerformance match {
+  case null => null
+  case x if x < -0.1 => 1
+  case x if x >= -0.1 && x < -0.05 => 2
+  case x if x >= -0.05 && x < 0 => 3
+  case x if x >= 0 && x < 0.05 => 4
+  case x if x >= 0.05 && x < 0.1 => 5
+  case _ => 6
+}
+
+var returnItems = spark.read.parquet(RETURN_ITEMS_PATH)
+returnItems = returnItems
+  .filter(col("level") === lit(1))
+  .withColumn("performanceBucket", performanceBucketUdf(col("netPerformance")))
+  .select("period", "bankCode", "customerCode", "level", "netPerformance", "netReturn", "performanceBucket")
+\end{lstlisting}

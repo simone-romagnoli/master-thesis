@@ -1,0 +1,182 @@
+\begin{lstlisting}[
+  label=code:mapping,
+  %language=json,
+  style=json,
+  caption=Mapping che definisce lo schema dei flussi in input e i relativi percorsi di input e output
+]
+{
+  "tables": [
+    {
+      "name": "anacli",
+      "format": "csv",
+      "source": "import/CLIENTI",
+      "oStorage": "output/store/CLIENTI",
+      "iStorage": "import/store/CLIENTI",
+      "iErrors": "import/errors/CLIENTI",
+      "oErrors": "output/errors/CLIENTI",
+      "sep": ";",
+      "header": true,
+      "primaryKey": ["CODICEBANCA", "C_CLIENTE"],
+      "columns": [
+        {
+          "name": "CODICEBANCA",
+          "datatype": "String",
+          "nullable": false
+        },
+        {
+          "name": "C_CLIENTE",
+          "datatype": "String",
+          "nullable": false
+        },
+        {
+          "name": "C_FILIALE",
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "Z_NOME",
+          "datatype": "String",
+          "mask": true,
+          "nullable": true
+        },
+        {
+          "name": "Z_COGNOME",
+          "mask": true,
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "DENOMINAZIONE",
+          "mask": true,
+          "datatype": "String",
+          "nullable": false
+        },
+        {
+          "name": "DATADINASCITA",
+          "datatype": "Integer",
+          "nullable": true
+        },
+        {
+          "name": "LUOGODINASCITA_COMUNE",
+          "mask": true,
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "LUOGODINASCITA_PROVINCIA",
+          "mask": true,
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "LUOGODINASCITA_PAESE",
+          "mask": true,
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "C_TIPOSOGGETTO",
+          "datatype": "String",
+          "nullable": false
+        },
+        {
+          "name": "Z_TIPOSOGGETTO",
+          "datatype": "String",
+          "nullable": false
+        },
+        {
+          "name": "C_CODICEFISCALE",
+          "mask": true,
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "PARTITAIVA",
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "STATO",
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "C_STATO_CIVILE",
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "C_GESTORE_RIF",
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "Z_GESTORE_RIF",
+          "datatype": "String",
+          "nullable": true
+        },
+        {
+          "name": "GENERE",
+          "datatype": "String",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "rapporti",
+      "format": "csv",
+      "source": "import/RAPPORTI",
+      "oStorage": "output/store/RAPPORTI",
+      "iStorage": "import/store/RAPPORTI",
+      "oErrors": "output/errors/RAPPORTI",
+      "sep": ";",
+      "header": true,
+      "primaryKey": ["CODICEBANCA", "C_FILIALE", "C_RAPPORTO", "C_SOTTORAPPORTO", "C_TIPO", "C_SOTTOTIPO"],
+      "foreignKey": [
+        {
+          "parent": "anacli",
+          "columns": ["CODICEBANCA", "C_CLIENTE"]
+        }
+      ],
+      "columns": [
+        {
+          "name": "CODICEBANCA",
+          "datatype": "String",
+          "nullable": false,
+          "aliases": ["bankCode"]
+        },
+        {
+          "name": "C_CLIENTE",
+          "datatype": "String",
+          "nullable": false,
+          "aliases": ["customerCode", "holder"]
+        },
+        {
+          "name": "C_FILIALE",
+          "datatype": "String",
+          "nullable": false,
+          "aliases": ["branchCode"]
+        },
+        {
+          "name": "C_RAPPORTO",
+          "datatype": "String",
+          "nullable": false,
+          "aliases": ["accountCode"]
+        },
+        {
+          "name": "C_SOTTORAPPORTO",
+          "datatype": "String",
+          "nullable": false,
+          "aliases": ["subAccountCode"]
+        }
+      ],
+      "newColumns": [
+        {
+          "name": "IDENTIFICATORE_RAPPORTO",
+          "datatype": "String",
+          "nullable": false
+        }
+      ]
+    }
+}
+\end{lstlisting}
